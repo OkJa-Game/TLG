@@ -339,15 +339,31 @@ class GameScene extends Phaser.Scene {
             }
             lastTapTime = currentTime;
 
-            // 스와이프도 아니고 더블 탭도 아닌 단일 터치일 경우 이동/멈춤 토글
+            // 스와이프도 아니고 더블 탭도 아닌 단일 터치일 경우 이동 방향 설정
             const isRightSide = pointer.x > this.cameras.main.width / 2;
 
-            if (this.player.mobileKeys.right || this.player.mobileKeys.left) {
-                // 이미 이동 중이었다면 무조건 멈춤
-                this.player.mobileKeys.right = false;
-                this.player.mobileKeys.left = false;
+            if (this.player.mobileKeys.right) {
+                // 오른쪽으로 이동 중일 때
+                if (isRightSide) {
+                    // 같은 방향(오른쪽) 터치 시 멈춤
+                    this.player.mobileKeys.right = false;
+                } else {
+                    // 반대 방향(왼쪽) 터치 시 바로 왼쪽으로 전환
+                    this.player.mobileKeys.right = false;
+                    this.player.mobileKeys.left = true;
+                }
+            } else if (this.player.mobileKeys.left) {
+                // 왼쪽으로 이동 중일 때
+                if (!isRightSide) {
+                    // 같은 방향(왼쪽) 터치 시 멈춤
+                    this.player.mobileKeys.left = false;
+                } else {
+                    // 반대 방향(오른쪽) 터치 시 바로 오른쪽으로 전환
+                    this.player.mobileKeys.left = false;
+                    this.player.mobileKeys.right = true;
+                }
             } else {
-                // 멈춰있었다면 터치한 화면의 좌/우에 따라 이동 시작
+                // 멈춰있을 때 터치한 방향으로 이동 시작
                 if (isRightSide) {
                     this.player.mobileKeys.right = true;
                 } else {
