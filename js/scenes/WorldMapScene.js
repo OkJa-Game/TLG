@@ -76,9 +76,27 @@ class WorldMapScene extends Phaser.Scene {
                 circle.on('pointerdown', () => {
                     if (this.isMoving) return;
 
+                    const enterStage = () => {
+                        this.isMoving = true;
+                        if (this.textures.exists('jump1')) {
+                            this.player.play('jump_air');
+                        }
+                        this.tweens.add({
+                            targets: this.player,
+                            y: this.player.y - 30, // 30픽셀 낮게 점프
+                            duration: 200,
+                            yoyo: true,
+                            ease: 'Sine.easeInOut',
+                            onComplete: () => {
+                                this.isMoving = false;
+                                this.registry.set('playerCurrentNode', node.id);
+                                this.scene.start('GameScene', { stage: node.id });
+                            }
+                        });
+                    };
+
                     if (this.player.x === node.x && this.player.y === node.y) {
-                        this.registry.set('playerCurrentNode', node.id);
-                        this.scene.start('GameScene', { stage: node.id });
+                        enterStage();
                         return;
                     }
 
@@ -103,12 +121,7 @@ class WorldMapScene extends Phaser.Scene {
                         duration: distance * 4, // 이동 속도 조절
                         ease: 'Linear',
                         onComplete: () => {
-                            this.isMoving = false;
-                            if (this.textures.exists('idle1')) {
-                                this.player.play('idle_loop');
-                            }
-                            this.registry.set('playerCurrentNode', node.id);
-                            this.scene.start('GameScene', { stage: node.id });
+                            enterStage();
                         }
                     });
                 });
