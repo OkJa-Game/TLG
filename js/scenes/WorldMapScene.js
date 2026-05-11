@@ -54,7 +54,7 @@ class WorldMapScene extends Phaser.Scene {
         
         if (this.textures.exists('idle1')) {
             this.player.setScale(0.5); // 월드맵에 맞게 크기 조절
-            this.player.play('idle_loop');
+            this.player.setTexture('idle1');
         }
 
         this.isMoving = false;
@@ -90,11 +90,12 @@ class WorldMapScene extends Phaser.Scene {
                             ease: 'Sine.easeInOut',
                             onComplete: () => {
                                 if (this.textures.exists('idle1')) {
-                                    this.player.play('idle_loop');
+                                    this.player.stop();
+                                    this.player.setTexture('idle1');
                                 }
                                 
-                                // 점프 후 1초 대기
-                                this.time.delayedCall(1000, () => {
+                                // 점프 후 0.5초 대기
+                                this.time.delayedCall(500, () => {
                                     // 화면 페이드 아웃 전환 효과
                                     this.cameras.main.fadeOut(500, 0, 0, 0);
                                     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
@@ -134,11 +135,12 @@ class WorldMapScene extends Phaser.Scene {
                         ease: 'Linear',
                         onComplete: () => {
                             if (this.textures.exists('idle1')) {
-                                this.player.play('idle_loop');
+                                this.player.stop();
+                                this.player.setTexture('idle1');
                             }
                             
-                            // 이동 후 1초 쉬고 점프
-                            this.time.delayedCall(1000, () => {
+                            // 이동 후 0.5초 쉬고 점프
+                            this.time.delayedCall(500, () => {
                                 enterStage();
                             });
                         }
