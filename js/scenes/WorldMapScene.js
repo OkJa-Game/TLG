@@ -9,6 +9,7 @@ class WorldMapScene extends Phaser.Scene {
 
         // 배경색
         this.cameras.main.setBackgroundColor('#2a1b3d');
+        this.cameras.main.fadeIn(500, 0, 0, 0);
 
         // 월드맵 제목
         const titleText = currentWorld === 1 ? 'World 1: Stratocaster' : 'World 2: Telecaster';
@@ -84,13 +85,24 @@ class WorldMapScene extends Phaser.Scene {
                         this.tweens.add({
                             targets: this.player,
                             y: this.player.y - 30, // 30픽셀 낮게 점프
-                            duration: 200,
+                            duration: 166, // 점프 속도 1.2배 (원래 200)
                             yoyo: true,
                             ease: 'Sine.easeInOut',
                             onComplete: () => {
-                                this.isMoving = false;
-                                this.registry.set('playerCurrentNode', node.id);
-                                this.scene.start('GameScene', { stage: node.id });
+                                if (this.textures.exists('idle1')) {
+                                    this.player.play('idle_loop');
+                                }
+                                
+                                // 점프 후 1초 대기
+                                this.time.delayedCall(1000, () => {
+                                    // 화면 페이드 아웃 전환 효과
+                                    this.cameras.main.fadeOut(500, 0, 0, 0);
+                                    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                                        this.isMoving = false;
+                                        this.registry.set('playerCurrentNode', node.id);
+                                        this.scene.start('GameScene', { stage: node.id });
+                                    });
+                                });
                             }
                         });
                     };
@@ -118,10 +130,17 @@ class WorldMapScene extends Phaser.Scene {
                         targets: this.player,
                         x: node.x,
                         y: node.y,
-                        duration: distance * 4, // 이동 속도 조절
+                        duration: distance * 3.33, // 이동 속도 1.2배 (원래 4)
                         ease: 'Linear',
                         onComplete: () => {
-                            enterStage();
+                            if (this.textures.exists('idle1')) {
+                                this.player.play('idle_loop');
+                            }
+                            
+                            // 이동 후 1초 쉬고 점프
+                            this.time.delayedCall(1000, () => {
+                                enterStage();
+                            });
                         }
                     });
                 });
