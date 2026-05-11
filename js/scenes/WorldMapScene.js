@@ -37,6 +37,27 @@ class WorldMapScene extends Phaser.Scene {
             { id: 5, x: 750, y: 235 }
         ];
 
+        // 플레이어 초기 위치 설정
+        const housePos = { x: 80, y: 430 }; // 대략적인 왼쪽 하단 통나무집 위치
+        let startPos = housePos;
+        const lastNodeId = this.registry.get('playerCurrentNode');
+        if (lastNodeId) {
+            const lastNode = nodes.find(n => n.id === lastNodeId);
+            if (lastNode) startPos = { x: lastNode.x, y: lastNode.y };
+        }
+
+        // 플레이어 스프라이트 생성
+        const playerTexture = this.textures.exists('idle1') ? 'idle1' : 'player_tex';
+        this.player = this.add.sprite(startPos.x, startPos.y, playerTexture);
+        this.player.setDepth(20);
+        
+        if (this.textures.exists('idle1')) {
+            this.player.setScale(0.5); // 월드맵에 맞게 크기 조절
+            this.player.play('idle_loop');
+        }
+
+        this.isMoving = false;
+
         // 노드 그리기
         nodes.forEach((node, index) => {
             const isUnlocked = unlockedStages.includes(node.id);
@@ -53,12 +74,49 @@ class WorldMapScene extends Phaser.Scene {
             if (isUnlocked) {
                 circle.setInteractive({ useHandCursor: true });
                 circle.on('pointerdown', () => {
-                    // 스테이지 진입
-                    this.scene.start('GameScene', { stage: node.id });
+                    if (this.isMoving) return;
+
+                    if (this.player.x === node.x && this.player.y === node.y) {
+                        this.registry.set('playerCurrentNode', node.id);
+                        this.scene.start('GameScene', { stage: node.id });
+                        return;
+                    }
+
+                    this.isMoving = true;
+                    
+                    if (node.x < this.player.x) {
+                        this.player.setFlipX(true);
+                    } else {
+                        this.player.setFlipX(false);
+                    }
+
+                    if (this.textures.exists('walk1')) {
+                        this.player.play('walk');
+                    }
+
+                    const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, node.x, node.y);
+                    
+                    this.tweens.add({
+                        targets: this.player,
+                        x: node.x,
+                        y: node.y,
+                        duration: distance * 4, // 이동 속도 조절
+                        ease: 'Linear',
+                        onComplete: () => {
+                            this.isMoving = false;
+                            if (this.textures.exists('idle1')) {
+                                this.player.play('idle_loop');
+                            }
+                            this.registry.set('playerCurrentNode', node.id);
+                            this.scene.start('GameScene', { stage: node.id });
+                        }
+                    });
                 });
                 
                 // 마우스 호버 효과
-                circle.on('pointerover', () => circle.setStrokeStyle(4, 0xffffff));
+                circle.on('pointerover', () => {
+                    if (!this.isMoving) circle.setStrokeStyle(4, 0xffffff);
+                });
                 circle.on('pointerout', () => circle.setStrokeStyle(0));
             }
         });
