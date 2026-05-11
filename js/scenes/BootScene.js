@@ -5,7 +5,7 @@ class BootScene extends Phaser.Scene {
 
     preload() {
         // 백그라운드 등 용량이 매우 큰 이미지는 HTTP로 직접 로드 (모바일 메모리 초과 방지)
-        this.load.image('map_world_01', 'assets/Map-Wotld-01.png');
+        this.load.image('map_world_01', 'assets/Map-Wotld-00-1.png');
         
         // 미리 디코딩된 Image 객체가 있다면 Phaser의 Texture Manager에 직접 추가합니다. (CORS 및 로컬 Data URI 우회)
         if (typeof window.loadedImages !== 'undefined') {
