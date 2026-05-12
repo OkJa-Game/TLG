@@ -12,7 +12,9 @@ class BootScene extends Phaser.Scene {
                 this.load.image('map_world_01', 'assets/Map-Wotld-00-1.png');
             }
 
-            if (window.loadedImages['CH-KH-Idle-1.png']) this.textures.addImage('npc_blacksmith', window.loadedImages['CH-KH-Idle-1.png']);
+            if (window.loadedImages['CH-KH-Idle-1.png']) this.textures.addImage('npc_blacksmith_1', window.loadedImages['CH-KH-Idle-1.png']);
+            if (window.loadedImages['CH-KH-Idle-2.png']) this.textures.addImage('npc_blacksmith_2', window.loadedImages['CH-KH-Idle-2.png']);
+            if (window.loadedImages['CH-KH-Idle-3.png']) this.textures.addImage('npc_blacksmith_3', window.loadedImages['CH-KH-Idle-3.png']);
             
             // 대기 애니메이션 (4프레임)
             if (window.loadedImages['CH-OK-Idle-1.png']) this.textures.addImage('idle1', window.loadedImages['CH-OK-Idle-1.png']);
@@ -183,6 +185,19 @@ class BootScene extends Phaser.Scene {
                 ],
                 frameRate: 10,
                 repeat: 0 
+            });
+        }
+        
+        if (this.textures.exists('npc_blacksmith_1')) {
+            this.anims.create({
+                key: 'kh_talk',
+                frames: [
+                    { key: 'npc_blacksmith_1', duration: 1000 },
+                    { key: 'npc_blacksmith_2', duration: 300 },
+                    { key: 'npc_blacksmith_3', duration: 1000 },
+                    { key: 'npc_blacksmith_2', duration: 300 }
+                ],
+                repeat: -1
             });
         }
 

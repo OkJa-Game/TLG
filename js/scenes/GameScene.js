@@ -21,7 +21,8 @@ class GameScene extends Phaser.Scene {
         // 3. 상호작용 객체 (대장장이 및 퀴즈 등)
         this.interactables = this.physics.add.staticGroup();
         // 대장장이 (목적지) - 스테이지 끝부분
-        const blacksmith = this.interactables.create(2800, 500, 'npc_blacksmith');
+        const blacksmith = this.physics.add.staticSprite(2800, 500, 'npc_blacksmith_1');
+        this.interactables.add(blacksmith);
         blacksmith.setOrigin(0.5, 1);
         // 플레이어 캐릭터와 동일하게 하단 10%의 투명 여백을 고려하여 바닥으로 내림
         blacksmith.setY(500 + blacksmith.height * 0.1);
@@ -92,11 +93,17 @@ class GameScene extends Phaser.Scene {
             
             if (interactable.isBlacksmith) {
                 player.setInteracting(true);
+                if (interactable.anims && interactable.scene.anims.exists('kh_talk')) {
+                    interactable.play('kh_talk');
+                }
                 
                 // 대장장이 로직
                 const collected = this.registry.get('collectedItems') || 0;
                 if (collected >= 4) { // 4개를 모아야 클리어
                     this.showSpeechBubble(interactable.x, interactable.y - interactable.displayHeight, "오! 재료를 모두 모아왔군. 부품 A를 만들어 주지!", 2000, () => {
+                        if (interactable.anims) interactable.stop();
+                        interactable.setTexture('npc_blacksmith_1');
+                        
                         let parts = this.registry.get('guitarParts') || [];
                         parts.push('Part A');
                         this.registry.set('guitarParts', parts);
@@ -111,6 +118,9 @@ class GameScene extends Phaser.Scene {
                     });
                 } else {
                     this.showSpeechBubble(interactable.x, interactable.y - interactable.displayHeight, `재료가 부족해... (현재 ${collected}/4개)`, 1500, () => {
+                        if (interactable.anims) interactable.stop();
+                        interactable.setTexture('npc_blacksmith_1');
+                        
                         // 약간 뒤로 물러나게 해서 무한 상호작용 방지
                         player.x -= 20;
                         player.setInteracting(false);
