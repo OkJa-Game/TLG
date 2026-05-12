@@ -194,7 +194,7 @@ class BootScene extends Phaser.Scene {
                 frames: [
                     { key: 'npc_blacksmith_1', duration: 1500 },
                     { key: 'npc_blacksmith_2', duration: 100 },
-                    { key: 'npc_blacksmith_3', duration: 1500 },
+                    { key: 'npc_blacksmith_3', duration: 1000 },
                     { key: 'npc_blacksmith_2', duration: 100 }
                 ],
                 repeat: -1
