@@ -101,7 +101,8 @@ class WorldMapScene extends Phaser.Scene {
                                     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
                                         this.isMoving = false;
                                         this.registry.set('playerCurrentNode', node.id);
-                                        this.scene.start('GameScene', { stage: node.id });
+                                        const targetScene = node.id === 2 ? 'Stage2Scene' : 'GameScene';
+                                        this.scene.start(targetScene, { stage: node.id });
                                     });
                                 });
                             }
