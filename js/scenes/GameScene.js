@@ -290,7 +290,9 @@ class GameScene extends Phaser.Scene {
             duration: 200,
             ease: 'Back.easeOut',
             onComplete: () => {
-                this.time.delayedCall(duration, () => {
+                const dismissBubble = () => {
+                    this.input.off('pointerdown', dismissBubble);
+                    this.input.keyboard.off('keydown', dismissBubble);
                     this.tweens.add({
                         targets: [bubble, content],
                         scale: 0,
@@ -301,6 +303,12 @@ class GameScene extends Phaser.Scene {
                             if (callback) callback();
                         }
                     });
+                };
+                
+                // 터치/클릭 중복 방지를 위해 약간의 지연 후 이벤트 등록
+                this.time.delayedCall(200, () => {
+                    this.input.on('pointerdown', dismissBubble);
+                    this.input.keyboard.on('keydown', dismissBubble);
                 });
             }
         });
