@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+    <title>슈퍼마리오 3 스타일 횡스크롤 + 텍스트 어드벤처</title>
+    
+    <!-- 모던 폰트 (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- 커스텀 스타일 -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Phaser 3 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+    <!-- Phaser 캔버스가 들어갈 게임 컨테이너 -->
+    <div id="game-container"></div>
+
+    <!-- 세련된 텍스트 어드벤처 / 퀴즈 오버레이 (초기엔 숨김) -->
+    <div id="quiz-overlay" class="hidden">
+        <div class="quiz-modal glass-effect">
+            <h2 id="quiz-title">앗! 신비한 책을 발견했다.</h2>
+            <p id="quiz-question">이 앞은 마법의 숲이다. 마법의 숲을 안전하게 지나가기 위해 필요한 주문은 무엇인가?</p>
+            
+            <div id="quiz-options" class="options-container">
+                <!-- 자바스크립트에서 동적으로 생성될 선택지 버튼들 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 스크립트 로드 (모듈 대신 일반 스크립트로 순서대로 로드, 캐시 우회를 위한 v=7) -->
+    <script src="js/assetsBase64.js?v=7"></script>
+    <script src="js/data/quizData.js?v=7"></script>
+    <script src="js/ui/QuizOverlay.js?v=7"></script>
+    <script src="js/entities/Player.js?v=7"></script>
+    <script src="js/entities/Enemy.js?v=7"></script>
+    <script src="js/entities/Item.js?v=7"></script>
+    <script src="js/scenes/BootScene.js?v=7"></script>
+    <script src="js/scenes/OpeningScene.js?v=7"></script>
+    <script src="js/scenes/WorldMapScene.js?v=7"></script>
+    <script src="js/scenes/GameScene.js?v=7"></script>
+    <script src="js/scenes/Stage2Scene.js?v=7"></script>
+    <script>
+        // 바로 2번 스테이지(Stage2Scene)로 가기 위한 설정
+        window.START_SCENE = 'Stage2Scene';
+    </script>
+    <script src="js/main.js?v=7"></script>
+</body>
+</html>
