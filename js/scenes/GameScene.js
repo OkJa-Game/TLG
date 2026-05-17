@@ -333,11 +333,23 @@ class GameScene extends Phaser.Scene {
         this.input.on('pointermove', (pointer) => {
             if (!pointer.isDown) return;
             
-            // 위로 40픽셀 이상 드래그하면 점프 제스처로 인식
+            // 위로 40픽셀 이상 드래그
             if (startY - pointer.y > 40) {
-                this.player.mobileKeys.up = true;
+                if (this.player.mobileKeys.down) {
+                    // 기어가는 상태에서 위로 올리면 정상대기로 (점프 안함)
+                    this.player.mobileKeys.down = false;
+                } else {
+                    // 서있는 상태에서 위로 올리면 점프
+                    this.player.mobileKeys.up = true;
+                }
                 isSwiping = true;
                 startY = pointer.y; // 드래그 중복 방지
+            } 
+            // 아래로 40픽셀 이상 드래그하면 기어가기(엎드리기) 제스처로 인식
+            else if (pointer.y - startY > 40) {
+                this.player.mobileKeys.down = true;
+                isSwiping = true;
+                startY = pointer.y;
             }
         });
 
