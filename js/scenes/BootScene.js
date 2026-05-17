@@ -9,7 +9,7 @@ class BootScene extends Phaser.Scene {
             if (window.loadedImages['Map-Wotld-00-1.png']) {
                 this.textures.addImage('map_world_01', window.loadedImages['Map-Wotld-00-1.png']);
             } else {
-                this.load.image('map_world_01', 'assets/Map-Wotld-00-1.png');
+                this.load.image('map_world_01', 'TLG-image/TLG-Map/Map-Wotld-00-1.png');
             }
 
             if (window.loadedImages['CH-KH-Idle-1.png']) this.textures.addImage('npc_blacksmith_1', window.loadedImages['CH-KH-Idle-1.png']);
@@ -35,6 +35,12 @@ class BootScene extends Phaser.Scene {
             if (window.loadedImages['CH-OK-Jump-3.png']) this.textures.addImage('jump3', window.loadedImages['CH-OK-Jump-3.png']);
             if (window.loadedImages['CH-OK-Jump-4.png']) this.textures.addImage('jump4', window.loadedImages['CH-OK-Jump-4.png']);
             if (window.loadedImages['CH-OK-Jump-5.png']) this.textures.addImage('jump5', window.loadedImages['CH-OK-Jump-5.png']);
+            
+            // 기어가기 애니메이션
+            if (window.loadedImages['CH-OK-Crawl-1.png']) this.textures.addImage('crawl1', window.loadedImages['CH-OK-Crawl-1.png']);
+            if (window.loadedImages['CH-OK-Crawl-2.png']) this.textures.addImage('crawl2', window.loadedImages['CH-OK-Crawl-2.png']);
+            if (window.loadedImages['CH-OK-Crawl-3.png']) this.textures.addImage('crawl3', window.loadedImages['CH-OK-Crawl-3.png']);
+            if (window.loadedImages['CH-OK-Crawl-4.png']) this.textures.addImage('crawl4', window.loadedImages['CH-OK-Crawl-4.png']);
         }
         
         // 현재는 에셋이 없으므로 Phaser의 Graphics를 이용해 임시 텍스처를 생성합니다.
@@ -185,6 +191,29 @@ class BootScene extends Phaser.Scene {
                 ],
                 frameRate: 10,
                 repeat: 0 
+            });
+
+            // 4-1. 기어가기 시작 애니메이션 (1 프레임)
+            this.anims.create({
+                key: 'crawl_start',
+                frames: [
+                    { key: 'crawl1' }
+                ],
+                frameRate: 10,
+                repeat: 0
+            });
+
+            // 4-2. 기어가기 반복 애니메이션 (2, 3, 4, 3 프레임 반복)
+            this.anims.create({
+                key: 'crawl_loop',
+                frames: [
+                    { key: 'crawl2' },
+                    { key: 'crawl3' },
+                    { key: 'crawl4' },
+                    { key: 'crawl3' }
+                ],
+                frameRate: 8,
+                repeat: -1
             });
         }
         

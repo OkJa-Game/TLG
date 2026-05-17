@@ -92,9 +92,28 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // 좌우 이동 및 기어가기 로직
         if ((cursors.down.isDown || this.mobileKeys.down) && body.blocked.down) {
             this.idleTime = 0; // 추가: 이동 시 타이머 초기화
-            // 기어가기
-            this.setAccelerationX(0);
-            this.setVelocityX(this.body.velocity.x * 0.9); // 마찰로 느려짐
+            const isFirstCrouchFrame = !this.wasCrawling;
+            this.wasCrawling = true; // 기어가기 상태 추적
+            // 기어가기 이동 로직
+            const crawlAccel = this.accel * 0.4; // 기어갈 때는 걷기보다 느리게 가속
+            const crawlMaxVel = 150; // 기어갈 때 최대 속도 제한
+            
+            if (cursors.left.isDown || this.mobileKeys.left) {
+                this.setAccelerationX(-crawlAccel);
+                this.setFlipX(true);
+                if (this.body.velocity.x < -crawlMaxVel) {
+                    this.setVelocityX(-crawlMaxVel);
+                }
+            } else if (cursors.right.isDown || this.mobileKeys.right) {
+                this.setAccelerationX(crawlAccel);
+                this.setFlipX(false);
+                if (this.body.velocity.x > crawlMaxVel) {
+                    this.setVelocityX(crawlMaxVel);
+                }
+            } else {
+                this.setAccelerationX(0);
+                this.setVelocityX(this.body.velocity.x * 0.9); // 마찰로 느려짐
+            }
             
             // 기어가기 히트박스 축소
             const crawlHeight = this.baseHeight * 0.4; // 절반으로 줄임
@@ -106,8 +125,23 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             this.body.setOffset(offsetX, offsetY); // 바닥에 붙임
             
             if (this.texture.key !== 'player_tex') {
-                // TODO: 기어가기 애니메이션(crawl) 추가 예정
-                // this.anims.play('crawl', true);
+                const isMoving = (cursors.left.isDown || this.mobileKeys.left || cursors.right.isDown || this.mobileKeys.right);
+                const currentKey = (this.anims.isPlaying && this.anims.currentAnim) ? this.anims.currentAnim.key : '';
+                
+                if (isFirstCrouchFrame) {
+                    this.anims.play('crawl_start', true);
+                } else if (isMoving) {
+                    if (currentKey !== 'crawl_start' && currentKey !== 'crawl_loop') {
+                        this.anims.play('crawl_loop', true);
+                    }
+                } else {
+                    if (currentKey !== 'crawl_start') {
+                        this.anims.stop();
+                        if (this.texture.key !== 'crawl2') {
+                            this.setTexture('crawl2');
+                        }
+                    }
+                }
             }
         } else {
             // 기어가기 아닐 때 히트박스 복구
@@ -121,6 +155,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
             if (cursors.left.isDown || this.mobileKeys.left) {
                 this.idleTime = 0; // 추가
+                this.wasCrawling = false;
                 this.setAccelerationX(-this.accel);
                 this.setFlipX(true);
                 
@@ -129,6 +164,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                 }
             } else if (cursors.right.isDown || this.mobileKeys.right) {
                 this.idleTime = 0; // 추가
+                this.wasCrawling = false;
                 this.setAccelerationX(this.accel);
                 this.setFlipX(false);
                 
@@ -144,19 +180,27 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                         const currentKey = this.anims.currentAnim ? this.anims.currentAnim.key : '';
                         
                         if (currentKey !== 'attack') {
-                            if (this.idleTime >= 1000) {
-                                // 1초 경과: 대기 애니메이션 시작
+                            const targetIdleTime = this.wasCrawling ? 100 : 1000;
+                            if (this.idleTime >= targetIdleTime) {
+                                // 설정된 시간 경과: 대기 애니메이션 시작
                                 if (currentKey !== 'idle_start' && currentKey !== 'idle_loop') {
                                     this.anims.play('idle_start');
+                                    this.wasCrawling = false; // 대기 애니메이션 재생 시 기어가기 상태 리셋
                                 }
                             } else {
-                                // 1초 미만: 기본 정지 상태 유지
+                                // 설정된 시간 미만: 기본 정지 상태 유지
                                 if (currentKey !== 'idle_start' && currentKey !== 'idle_loop') {
                                     if (this.anims.isPlaying) {
                                         this.anims.stop();
                                     }
-                                    if (this.texture.key !== 'idle1') {
-                                        this.setTexture('idle1');
+                                    if (this.wasCrawling) {
+                                        if (this.texture.key !== 'crawl1') {
+                                            this.setTexture('crawl1');
+                                        }
+                                    } else {
+                                        if (this.texture.key !== 'idle1') {
+                                            this.setTexture('idle1');
+                                        }
                                     }
                                 }
                             }
@@ -164,6 +208,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                     }
                 } else {
                     this.idleTime = 0; // 공중이거나 밀려나는 중
+                    this.wasCrawling = false;
                 }
             }
         }
@@ -172,6 +217,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // 바닥에 닿아있을 때만 점프 가능
         if ((cursors.up.isDown || this.mobileKeys.up) && body.blocked.down) {
             this.idleTime = 0; // 추가
+            this.wasCrawling = false;
             this.setVelocityY(this.jumpForce);
         }
         

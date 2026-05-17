@@ -1,4 +1,4 @@
-$files = Get-ChildItem "assets" -Filter "*.png"
+$files = Get-ChildItem -Path "TLG-image" -Filter "*.png" -Recurse
 $jsContent = "const assetsBase64 = {`n"
 foreach ($file in $files) {
     $bytes = [IO.File]::ReadAllBytes($file.FullName)
