@@ -15,7 +15,7 @@ const config = {
             debug: false // 충돌 영역을 눈으로 보려면 true로 변경
         }
     },
-    scene: [BootScene, OpeningScene, WorldMapScene, GameScene, Stage2Scene]
+    scene: [BootScene, OpeningScene, WorldMapScene, GameScene, Stage2Scene, Stage4Scene]
 };
 
 // 게임 인스턴스를 시작하는 함수
