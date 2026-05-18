@@ -347,9 +347,12 @@ class GameScene extends Phaser.Scene {
             } 
             // 아래로 40픽셀 이상 드래그하면 기어가기(엎드리기) 제스처로 인식
             else if (pointer.y - startY > 40) {
-                this.player.mobileKeys.down = true;
-                isSwiping = true;
-                startY = pointer.y;
+                // 두 손가락으로 드래그할 때만 엎드리기 실행
+                if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
+                    this.player.mobileKeys.down = true;
+                    isSwiping = true;
+                    startY = pointer.y;
+                }
             }
         });
 
