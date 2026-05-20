@@ -6,10 +6,10 @@ class BootScene extends Phaser.Scene {
     preload() {
         // 미리 디코딩된 Image 객체가 있다면 Phaser의 Texture Manager에 직접 추가합니다. (CORS 및 로컬 Data URI 우회)
         if (typeof window.loadedImages !== 'undefined') {
-            if (window.loadedImages['Map-Wotld-00-1.png']) {
-                this.textures.addImage('map_world_01', window.loadedImages['Map-Wotld-00-1.png']);
+            if (window.loadedImages['TLG-Map-W1.png']) {
+                this.textures.addImage('map_world_01', window.loadedImages['TLG-Map-W1.png']);
             } else {
-                this.load.image('map_world_01', 'TLG-image/TLG-Map/Map-Wotld-00-1.png');
+                this.load.image('map_world_01', 'TLG-image/TLG-Map/TLG-Map-W1.png');
             }
 
             if (window.loadedImages['CH-KH-Idle-1.png']) this.textures.addImage('npc_blacksmith_1', window.loadedImages['CH-KH-Idle-1.png']);

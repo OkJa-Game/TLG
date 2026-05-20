@@ -29,21 +29,69 @@ class WorldMapScene extends Phaser.Scene {
             }).setOrigin(0.5).setAngle(-15);
         }
 
-        // 스테이지 노드 위치 (이미지 상의 빨간 네모 위치에 맞춤)
+        // 스테이지 노드 위치 및 연결 구조
         const nodes = [
-            { id: 1, x: 215, y: 405 },
-            { id: 2, x: 430, y: 410 },
-            { id: 3, x: 315, y: 250 },
-            { id: 4, x: 610, y: 360 },
-            { id: 5, x: 750, y: 235 }
+            { id: 1, x: 335, y: 350 },
+            { id: 2, x: 500, y: 350 },
+            { id: 3, x: 285, y: 250 },
+            { id: 4, x: 50, y: 240 },
+            { id: 5, x: 150, y: 150 },
+            { id: 6, x: 825, y: 225 }
         ];
+        
+        const S_NODE = { id: 0, x: 200, y: 450 }; // 시작 지점(집)
+
+        // 그래프 연결 (노드 간 연결망)
+        const graph = {
+            0: [1],
+            1: [0, 2, 3],
+            2: [1, 6],
+            3: [1, 4, 5],
+            4: [3],
+            5: [3],
+            6: [2]
+        };
+
+        // 노드 사이의 경로(웨이포인트) 배열
+        const paths = {
+            '0-1': [{x: 200, y: 450}, {x: 320, y: 450}, {x: 335, y: 350}],
+            '1-2': [{x: 335, y: 350}, {x: 380, y: 420}, {x: 480, y: 430}, {x: 500, y: 350}],
+            '1-3': [{x: 335, y: 350}, {x: 285, y: 250}],
+            '3-4': [{x: 285, y: 250}, {x: 180, y: 270}, {x: 50, y: 240}],
+            '3-5': [{x: 285, y: 250}, {x: 230, y: 170}, {x: 150, y: 150}],
+            '2-6': [{x: 500, y: 350}, {x: 620, y: 440}, {x: 750, y: 350}, {x: 825, y: 225}]
+        };
+
+        function getWaypoints(start, end) {
+            let key = `${start}-${end}`;
+            if (paths[key]) return paths[key];
+            key = `${end}-${start}`;
+            if (paths[key]) return [...paths[key]].reverse();
+            return [{x: 0, y: 0}]; // 에러 방지
+        }
+
+        function getShortestNodePath(startId, endId) {
+            let queue = [[startId]];
+            let visited = new Set([startId]);
+            while (queue.length > 0) {
+                let path = queue.shift();
+                let current = path[path.length - 1];
+                if (current === endId) return path;
+                for (let neighbor of graph[current] || []) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push([...path, neighbor]);
+                    }
+                }
+            }
+            return [startId, endId];
+        }
 
         // 플레이어 초기 위치 설정
-        const housePos = { x: 80, y: 430 }; // 대략적인 왼쪽 하단 통나무집 위치
-        let startPos = housePos;
-        const lastNodeId = this.registry.get('playerCurrentNode');
-        if (lastNodeId) {
-            const lastNode = nodes.find(n => n.id === lastNodeId);
+        this.currentNodeId = this.registry.get('playerCurrentNode') || 0;
+        let startPos = S_NODE;
+        if (this.currentNodeId !== 0) {
+            const lastNode = nodes.find(n => n.id === this.currentNodeId);
             if (lastNode) startPos = { x: lastNode.x, y: lastNode.y };
         }
 
@@ -58,6 +106,11 @@ class WorldMapScene extends Phaser.Scene {
         }
 
         this.isMoving = false;
+
+        // 시작점 S (텍스트 추가)
+        this.add.text(S_NODE.x, S_NODE.y + 25, "S", {
+            fontFamily: 'Inter', fontSize: '20px', color: '#ff0000', fontStyle: 'bold'
+        }).setOrigin(0.5);
 
         // 노드 그리기
         nodes.forEach((node, index) => {
@@ -85,7 +138,7 @@ class WorldMapScene extends Phaser.Scene {
                         this.tweens.add({
                             targets: this.player,
                             y: this.player.y - 30, // 30픽셀 낮게 점프
-                            duration: 166, // 점프 속도 1.2배 (원래 200)
+                            duration: 166,
                             yoyo: true,
                             ease: 'Sine.easeInOut',
                             onComplete: () => {
@@ -96,7 +149,6 @@ class WorldMapScene extends Phaser.Scene {
                                 
                                 // 점프 후 0.5초 대기
                                 this.time.delayedCall(500, () => {
-                                    // 화면 페이드 아웃 전환 효과
                                     this.cameras.main.fadeOut(500, 0, 0, 0);
                                     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
                                         this.isMoving = false;
@@ -111,43 +163,88 @@ class WorldMapScene extends Phaser.Scene {
                         });
                     };
 
-                    if (this.player.x === node.x && this.player.y === node.y) {
+                    if (this.currentNodeId === node.id) {
                         enterStage();
                         return;
                     }
 
                     this.isMoving = true;
                     
-                    if (node.x < this.player.x) {
-                        this.player.setFlipX(true);
-                    } else {
-                        this.player.setFlipX(false);
+                    // 길찾기 및 웨이포인트 수집
+                    let nodeSequence = getShortestNodePath(this.currentNodeId, node.id);
+                    let allWaypoints = [];
+                    for (let i = 0; i < nodeSequence.length - 1; i++) {
+                        let wp = getWaypoints(nodeSequence[i], nodeSequence[i+1]);
+                        if (allWaypoints.length > 0 && wp.length > 0) {
+                            wp = wp.slice(1);
+                        }
+                        allWaypoints = allWaypoints.concat(wp);
+                    }
+
+                    if (allWaypoints.length === 0) {
+                        this.isMoving = false;
+                        return;
                     }
 
                     if (this.textures.exists('walk1')) {
                         this.player.play('walk');
                     }
 
-                    const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, node.x, node.y);
+                    // 웨이포인트 순차 이동을 위한 타임라인 애니메이션 구축
+                    let tweensConfig = [];
+                    let lastPos = { x: this.player.x, y: this.player.y };
+
+                    allWaypoints.forEach((wp) => {
+                        const distance = Phaser.Math.Distance.Between(lastPos.x, lastPos.y, wp.x, wp.y);
+                        if (distance > 0) {
+                            tweensConfig.push({
+                                targets: this.player,
+                                x: wp.x,
+                                y: wp.y,
+                                duration: distance * 5, // 속도 조정
+                                ease: 'Linear',
+                                onStart: () => {
+                                    // 이동 방향에 맞게 좌우 반전
+                                    if (wp.x < this.player.x) {
+                                        this.player.setFlipX(true);
+                                    } else if (wp.x > this.player.x) {
+                                        this.player.setFlipX(false);
+                                    }
+                                }
+                            });
+                            lastPos = wp;
+                        }
+                    });
+
+                    // Phaser 3의 tween 체이닝을 활용하여 순차적으로 실행
+                    let currentTweenIdx = 0;
                     
-                    this.tweens.add({
-                        targets: this.player,
-                        x: node.x,
-                        y: node.y,
-                        duration: distance * 3.33, // 이동 속도 1.2배 (원래 4)
-                        ease: 'Linear',
-                        onComplete: () => {
+                    const playNextTween = () => {
+                        if (currentTweenIdx >= tweensConfig.length) {
+                            // 이동 완료
                             if (this.textures.exists('idle1')) {
                                 this.player.stop();
                                 this.player.setTexture('idle1');
                             }
+                            this.currentNodeId = node.id;
+                            this.registry.set('playerCurrentNode', node.id);
                             
-                            // 이동 후 0.5초 쉬고 점프
                             this.time.delayedCall(500, () => {
                                 enterStage();
                             });
+                            return;
                         }
-                    });
+
+                        let config = tweensConfig[currentTweenIdx];
+                        config.onComplete = () => {
+                            currentTweenIdx++;
+                            playNextTween();
+                        };
+                        this.tweens.add(config);
+                    };
+
+                    playNextTween();
+
                 });
                 
                 // 마우스 호버 효과
