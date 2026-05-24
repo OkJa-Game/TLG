@@ -20,9 +20,17 @@ class Stage4Scene extends Phaser.Scene {
             this.platforms.create(i+20, 2980, 'ground_tex');
         }
 
+        // 3. 상호작용 객체, 아이템, 적 그룹 초기화
+        this.interactables = this.physics.add.staticGroup();
+        this.items = this.physics.add.group({ allowGravity: false, immovable: true });
+        this.enemies = this.physics.add.group();
+        this.missiles = this.physics.add.group();
+
         // 지그재그 플랫폼 생성 (아래에서 위로 올라가는 계단식)
-        let yPos = 2750;
+        let yPos = 2815; // 최하단(2980)에서 165만큼 위에서 시작
         let isLeft = true;
+        let floorCount = 0;
+
         while (yPos > 300) {
             let startX = isLeft ? 0 : 400;
             let endX = isLeft ? 560 : 960;
@@ -30,24 +38,39 @@ class Stage4Scene extends Phaser.Scene {
             for(let x=startX; x<endX; x+=40) {
                 this.platforms.create(x+20, yPos, 'ground_tex');
             }
-            yPos -= 250; // 위로 250px 씩 올라감
-            isLeft = !isLeft;
-        }
+            
+            // 중간중간 점프를 돕는 작은 발판 생성 (간격의 중간)
+            if (yPos - 165 > 300) {
+                this.platforms.create(480, yPos - 82, 'ground_tex');
+            }
 
-        // 중간중간 점프를 돕는 작은 발판 생성
-        this.platforms.create(480, 2625, 'ground_tex');
-        this.platforms.create(480, 2125, 'ground_tex');
-        this.platforms.create(480, 1625, 'ground_tex');
-        this.platforms.create(480, 1125, 'ground_tex');
-        this.platforms.create(480, 625, 'ground_tex');
+            // 아이템, 적, 퀴즈 박스 동적 배치
+            const itemX = isLeft ? 300 : 700;
+            if (floorCount === 2) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part1'));
+            if (floorCount === 5) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part2'));
+            if (floorCount === 8) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part3'));
+            if (floorCount === 11) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part4'));
+
+            if (floorCount === 3 || floorCount === 6 || floorCount === 9 || floorCount === 12) {
+                this.enemies.add(new Enemy(this, itemX, yPos - 50, 'enemy_tex'));
+            }
+
+            if (floorCount === 7) {
+                const box = this.physics.add.staticSprite(isLeft ? 250 : 650, yPos - 40, 'box_tex');
+                this.interactables.add(box);
+                box.quizId = 'box_riddle';
+            }
+
+            yPos -= 165; // 기존 250px에서 2/3 수준인 165px로 층 높이 감소
+            isLeft = !isLeft;
+            floorCount++;
+        }
         
         // 문 앞 발판
         for(let i=360; i<600; i+=40) {
             this.platforms.create(i+20, 150, 'ground_tex');
         }
 
-        // 3. 상호작용 객체 (클리어 지점)
-        this.interactables = this.physics.add.staticGroup();
         // 맨 위 목적지 (문)
         const door = this.physics.add.staticSprite(480, 50, 'door_tex');
         this.interactables.add(door);
@@ -55,28 +78,6 @@ class Stage4Scene extends Phaser.Scene {
         door.setY(150);
         door.refreshBody();
         door.isDoor = true;
-
-        // 중간 퀴즈 상자
-        const box = this.physics.add.staticSprite(200, 1600, 'box_tex');
-        this.interactables.add(box);
-        box.quizId = 'box_riddle';
-
-        // 4. 아이템 그룹 생성 (임의 위치에 부품 조각 수집)
-        this.items = this.physics.add.group({ allowGravity: false, immovable: true });
-        this.items.add(new Item(this, 300, 2650, 'item_tex', 'part1'));
-        this.items.add(new Item(this, 700, 2150, 'item_tex', 'part2'));
-        this.items.add(new Item(this, 300, 1650, 'item_tex', 'part3'));
-        this.items.add(new Item(this, 700, 1150, 'item_tex', 'part4'));
-
-        // 5. 적 및 미사일 그룹 생성
-        this.enemies = this.physics.add.group();
-        this.missiles = this.physics.add.group();
-        
-        // 스테이지에 적 배치 (각 층마다 배치)
-        this.enemies.add(new Enemy(this, 300, 2400, 'enemy_tex'));
-        this.enemies.add(new Enemy(this, 700, 1900, 'enemy_tex'));
-        this.enemies.add(new Enemy(this, 300, 1400, 'enemy_tex'));
-        this.enemies.add(new Enemy(this, 700, 900, 'enemy_tex'));
 
         // 6. 플레이어 생성 (최하단)
         const playerTexture = this.textures.exists('idle1') ? 'idle1' : 'player_tex';

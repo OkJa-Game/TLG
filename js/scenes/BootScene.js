@@ -6,10 +6,10 @@ class BootScene extends Phaser.Scene {
     preload() {
         // 미리 디코딩된 Image 객체가 있다면 Phaser의 Texture Manager에 직접 추가합니다. (CORS 및 로컬 Data URI 우회)
         if (typeof window.loadedImages !== 'undefined') {
-            if (window.loadedImages['TLG-Map-W1.png']) {
-                this.textures.addImage('map_world_01', window.loadedImages['TLG-Map-W1.png']);
+            if (window.loadedImages['TLG-Map-World-01.jpg']) {
+                this.textures.addImage('map_world_01', window.loadedImages['TLG-Map-World-01.jpg']);
             } else {
-                this.load.image('map_world_01', 'TLG-image/TLG-Map/TLG-Map-W1.png');
+                this.load.image('map_world_01', 'TLG-image/TLG-Map/TLG-Map-World-01.jpg');
             }
 
             if (window.loadedImages['CH-KH-Idle-1.png']) this.textures.addImage('npc_blacksmith_1', window.loadedImages['CH-KH-Idle-1.png']);
@@ -28,6 +28,16 @@ class BootScene extends Phaser.Scene {
             if (window.loadedImages['CH-OK-Walk-3.png']) this.textures.addImage('walk3', window.loadedImages['CH-OK-Walk-3.png']);
             if (window.loadedImages['CH-OK-Walk-4.png']) this.textures.addImage('walk4', window.loadedImages['CH-OK-Walk-4.png']);
             if (window.loadedImages['CH-OK-Walk-5.png']) this.textures.addImage('walk5', window.loadedImages['CH-OK-Walk-5.png']);
+            
+            // 위로 걷기 애니메이션
+            if (window.loadedImages['CH-OK-WalkUp-1.png']) this.textures.addImage('walkUp1', window.loadedImages['CH-OK-WalkUp-1.png']);
+            if (window.loadedImages['CH-OK-WalkUp-2.png']) this.textures.addImage('walkUp2', window.loadedImages['CH-OK-WalkUp-2.png']);
+            if (window.loadedImages['CH-OK-WalkUp-3.png']) this.textures.addImage('walkUp3', window.loadedImages['CH-OK-WalkUp-3.png']);
+
+            // 아래로 걷기 애니메이션
+            if (window.loadedImages['CH-OK-WalkDown-1.png']) this.textures.addImage('walkDown1', window.loadedImages['CH-OK-WalkDown-1.png']);
+            if (window.loadedImages['CH-OK-WalkDown-2.png']) this.textures.addImage('walkDown2', window.loadedImages['CH-OK-WalkDown-2.png']);
+            if (window.loadedImages['CH-OK-WalkDown-3.png']) this.textures.addImage('walkDown3', window.loadedImages['CH-OK-WalkDown-3.png']);
             
             // 점프 애니메이션
             if (window.loadedImages['CH-OK-Jump-1.png']) this.textures.addImage('jump1', window.loadedImages['CH-OK-Jump-1.png']);
@@ -159,6 +169,28 @@ class BootScene extends Phaser.Scene {
                 ],
                 frameRate: 10,
                 repeat: -1 
+            });
+
+            // 위로 걷기 애니메이션 (2, 3프레임 반복)
+            this.anims.create({
+                key: 'walkUp',
+                frames: [
+                    { key: 'walkUp2' },
+                    { key: 'walkUp3' }
+                ],
+                frameRate: 10,
+                repeat: -1
+            });
+
+            // 아래로 걷기 애니메이션 (2, 3프레임 반복)
+            this.anims.create({
+                key: 'walkDown',
+                frames: [
+                    { key: 'walkDown2' },
+                    { key: 'walkDown3' }
+                ],
+                frameRate: 10,
+                repeat: -1
             });
 
             // 3-1. 점프 공중 체공 애니메이션 (1, 2, 3프레임 재생 후 3에서 정지, 상승/하강 모두 유지)

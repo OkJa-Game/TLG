@@ -132,6 +132,14 @@ canvas {
     box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
 }
 
+/* 키보드 포커스 효과 */
+.quiz-btn.focused {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: #38bdf8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+}
+
 /* 클릭(액티브) 시 효과 */
 .quiz-btn:active {
     transform: translateY(1px);

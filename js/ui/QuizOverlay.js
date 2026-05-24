@@ -7,12 +7,41 @@ const QuizOverlay = {
     
     // 퀴즈 종료 시 호출될 콜백 함수 저장
     onCompleteCallback: null,
+    
+    focusedIndex: 0,
+    handleKeyDown: null,
 
     init() {
         this.overlayEl = document.getElementById('quiz-overlay');
         this.titleEl = document.getElementById('quiz-title');
         this.questionEl = document.getElementById('quiz-question');
         this.optionsEl = document.getElementById('quiz-options');
+
+        this.handleKeyDown = (e) => {
+            if (this.overlayEl.classList.contains('hidden')) return;
+
+            const btns = this.optionsEl.querySelectorAll('.quiz-btn');
+            if (btns.length === 0) return;
+            
+            // 이미 정답을 골라서 비활성화 된 상태인지 확인
+            if (btns[0].disabled) return;
+
+            if (e.key === 'ArrowUp') {
+                this.focusedIndex--;
+                if (this.focusedIndex < 0) this.focusedIndex = btns.length - 1;
+                this.updateFocus();
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                this.focusedIndex++;
+                if (this.focusedIndex >= btns.length) this.focusedIndex = 0;
+                this.updateFocus();
+                e.preventDefault();
+            } else if (e.key === 'Enter') {
+                btns[this.focusedIndex].click();
+                e.preventDefault();
+            }
+        };
+        window.addEventListener('keydown', this.handleKeyDown);
     },
 
     /**
@@ -50,6 +79,10 @@ const QuizOverlay = {
             this.optionsEl.appendChild(btn);
         });
 
+        // 키보드 포커스 초기화
+        this.focusedIndex = 0;
+        this.updateFocus();
+
         // UI 보이기
         this.overlayEl.classList.remove('hidden');
     },
@@ -85,6 +118,17 @@ const QuizOverlay = {
         if (this.overlayEl) {
             this.overlayEl.classList.add('hidden');
         }
+    },
+
+    updateFocus() {
+        const btns = this.optionsEl.querySelectorAll('.quiz-btn');
+        btns.forEach((btn, idx) => {
+            if (idx === this.focusedIndex) {
+                btn.classList.add('focused');
+            } else {
+                btn.classList.remove('focused');
+            }
+        });
     }
 };
 
