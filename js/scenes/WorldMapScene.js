@@ -102,12 +102,20 @@ class WorldMapScene extends Phaser.Scene {
 
         // 드래그 입력 설정
         this.dragStart = null;
+        this.lastTapTime = 0;
 
         this.input.on('pointerdown', (pointer) => {
             const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
             if (isMobile && !this.scale.isFullscreen && window.innerWidth > window.innerHeight) {
                 this.scale.startFullscreen();
             }
+
+            // 더블탭 감지 로직 (300ms 이내 터치 시)
+            const currentTime = this.time.now;
+            if (currentTime - this.lastTapTime < 300) {
+                this.enterCurrentStage();
+            }
+            this.lastTapTime = currentTime;
             
             // 모바일 드래그 조작을 위해 시작 위치 기록
             if (!this.isMoving) {
