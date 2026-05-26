@@ -34,10 +34,12 @@ class WorldMapScene extends Phaser.Scene {
         
         const X_COORDS = [55, 225, 395, 565, 735, 905];
         const Y_COORDS = [175, 280, 385, 490];
+        const COLS = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const ROWS = ['1', '2', '3', '4'];
         
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 6; c++) {
-                const id = c * 4 + r + 1;
+                const id = COLS[c] + ROWS[r];
                 this.nodes.push({ id, x: X_COORDS[c], y: Y_COORDS[r] });
                 this.graph[id] = [];
             }
@@ -46,17 +48,17 @@ class WorldMapScene extends Phaser.Scene {
         // 가로, 세로 엣지 추가
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 6; c++) {
-                const id = c * 4 + r + 1;
+                const id = COLS[c] + ROWS[r];
                 // 우측 연결 (가로)
                 if (c < 5) {
-                    const rightId = (c + 1) * 4 + r + 1;
+                    const rightId = COLS[c+1] + ROWS[r];
                     this.graph[id].push(rightId);
                     this.graph[rightId].push(id);
                     this.paths[`${id}-${rightId}`] = [{x: X_COORDS[c], y: Y_COORDS[r]}, {x: X_COORDS[c+1], y: Y_COORDS[r]}];
                 }
                 // 하단 연결 (세로)
                 if (r < 3) {
-                    const downId = c * 4 + (r + 1) + 1;
+                    const downId = COLS[c] + ROWS[r+1];
                     this.graph[id].push(downId);
                     this.graph[downId].push(id);
                     this.paths[`${id}-${downId}`] = [{x: X_COORDS[c], y: Y_COORDS[r]}, {x: X_COORDS[c], y: Y_COORDS[r+1]}];
@@ -70,8 +72,8 @@ class WorldMapScene extends Phaser.Scene {
             this.add.circle(node.x, node.y, 20, 0x3b82f6);
             
             let label = String(node.id);
-            if (node.id === 3) label = '🏠 3';
-            else if ([6, 9, 12, 14, 22].includes(node.id)) label = '⭐ ' + node.id;
+            if (node.id === 'A3') label = '🏠 A3';
+            else if (['B2', 'C1', 'C4', 'D2', 'F2'].includes(node.id)) label = '⭐ ' + node.id;
             
             this.add.text(node.x, node.y, label, {
                 fontFamily: 'Inter', fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
@@ -79,8 +81,17 @@ class WorldMapScene extends Phaser.Scene {
         });
         */
 
-        // 플레이어 초기 위치 설정 (3번이 주인공 집)
-        this.currentNodeId = this.registry.get('playerCurrentNode') || 3;
+        // B2 노드에 Mop 애니메이션 추가
+        const b2Node = this.nodes.find(n => n.id === 'B2');
+        if (b2Node && this.textures.exists('mop_a_1')) {
+            // Mop 이미지를 B2 노드보다 살짝 위쪽에 배치 (주인공 캐릭터와 동일한 사이즈를 위해 스케일 0.5 적용)
+            const mopSprite = this.add.sprite(b2Node.x, b2Node.y - 30, 'mop_a_1').setDepth(15);
+            mopSprite.setScale(0.5);
+            mopSprite.play('mop_idle');
+        }
+
+        // 플레이어 초기 위치 설정 (A3가 주인공 집)
+        this.currentNodeId = this.registry.get('playerCurrentNode') || 'A3';
         let startPos = this.nodes.find(n => n.id === this.currentNodeId) || this.nodes[0];
 
         // 플레이어 스프라이트 생성
@@ -100,9 +111,9 @@ class WorldMapScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
 
-        // 드래그 입력 설정
-        this.dragStart = null;
+        // 모바일 입력 설정
         this.lastTapTime = 0;
+        this.mobileMoveIntent = { dx: 0, dy: 0 };
 
         this.input.on('pointerdown', (pointer) => {
             const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
@@ -114,31 +125,31 @@ class WorldMapScene extends Phaser.Scene {
             const currentTime = this.time.now;
             if (currentTime - this.lastTapTime < 300) {
                 this.enterCurrentStage();
+                return;
             }
             this.lastTapTime = currentTime;
             
-            // 모바일 드래그 조작을 위해 시작 위치 기록
-            if (!this.isMoving) {
-                this.dragStart = { x: pointer.x, y: pointer.y };
+            // 모바일 터치 이동 및 정지 처리
+            if (this.mobileMoveIntent && (this.mobileMoveIntent.dx !== 0 || this.mobileMoveIntent.dy !== 0)) {
+                // 이미 이동 중이거나 이동 의도가 있으면 멈춤
+                this.mobileMoveIntent = { dx: 0, dy: 0 };
+            } else {
+                // 멈춰있거나 이동 의도가 없으면 터치한 방향으로 이동 의도 설정
+                const dx = pointer.x - this.player.x;
+                const dy = pointer.y - this.player.y;
+                
+                if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
+                    this.mobileMoveIntent = { dx, dy };
+                    
+                    if (!this.isMoving) {
+                        this.handleMovementInput(this.mobileMoveIntent.dx, this.mobileMoveIntent.dy);
+                    }
+                }
             }
         });
 
-        this.input.on('pointerup', () => {
-            this.dragStart = null;
-        });
-
-        this.input.on('pointermove', (pointer) => {
-            if (!this.dragStart || this.isMoving) return;
-            
-            const dx = pointer.x - this.dragStart.x;
-            const dy = pointer.y - this.dragStart.y;
-            
-            // 일정 이상 드래그 시 방향 판별
-            if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
-                this.handleMovementInput(dx, dy);
-                this.dragStart = null; // 처리 후 연속 입력 방지
-            }
-        });
+        this.input.on('pointerup', () => {});
+        this.input.on('pointermove', (pointer) => {});
 
         // 현재 획득한 아이템/부품 상태 표시 UI
         const parts = this.registry.get('guitarParts') || [];
@@ -155,24 +166,23 @@ class WorldMapScene extends Phaser.Scene {
         return [];
     }
 
-    handleMovementInput(dx, dy) {
-        if (this.isMoving) return;
+    getBestNode(dx, dy) {
+        if (dx === 0 && dy === 0) return null;
         
         const neighbors = this.graph[this.currentNodeId];
-        if (!neighbors || neighbors.length === 0) return;
+        if (!neighbors || neighbors.length === 0) return null;
 
         let bestNode = null;
         let maxDot = -1;
 
         const inputLen = Math.sqrt(dx * dx + dy * dy);
-        if (inputLen === 0) return;
+        if (inputLen === 0) return null;
         
         const nx = dx / inputLen;
         const ny = dy / inputLen;
 
         const currentNode = this.nodes.find(n => n.id === this.currentNodeId);
 
-        // 이웃한 노드 중에서 입력 방향과 가장 유사한 방향에 있는 노드를 찾습니다.
         for (let nextId of neighbors) {
             const neighborNode = this.nodes.find(n => n.id === nextId);
             const dirX = neighborNode.x - currentNode.x;
@@ -184,18 +194,26 @@ class WorldMapScene extends Phaser.Scene {
             const dNx = dirX / dirLen;
             const dNy = dirY / dirLen;
             
-            // 방향 내적 (dot product) 계산: 1에 가까울수록 같은 방향
             const dot = (nx * dNx) + (ny * dNy);
             
-            // 허용 오차: 약 60도 이내일 때만 반응
             if (dot > 0.5 && dot > maxDot) {
                 maxDot = dot;
                 bestNode = nextId;
             }
         }
+        return bestNode;
+    }
 
+    handleMovementInput(dx, dy) {
+        if (this.isMoving) return;
+        
+        const bestNode = this.getBestNode(dx, dy);
         if (bestNode !== null) {
             this.moveToNode(bestNode);
+        } else {
+            if (this.mobileMoveIntent) {
+                this.mobileMoveIntent = { dx: 0, dy: 0 };
+            }
         }
     }
 
@@ -262,10 +280,43 @@ class WorldMapScene extends Phaser.Scene {
         });
 
         let currentTweenIdx = 0;
+
+        if (tweensConfig.length === 0) {
+            this.currentNodeId = targetId;
+            this.registry.set('playerCurrentNode', targetId);
+            this.isMoving = false;
+            this.lastDirection = 'none';
+            if (this.mobileMoveIntent) this.mobileMoveIntent = { dx: 0, dy: 0 };
+            return;
+        }
         
         const playNextTween = () => {
             if (currentTweenIdx >= tweensConfig.length) {
                 // 도착 완료
+                this.currentNodeId = targetId;
+                this.registry.set('playerCurrentNode', targetId);
+
+                // 계속 이동해야 하는지 의도 확인
+                let pcDx = 0, pcDy = 0;
+                if (this.cursors.left.isDown) pcDx = -1;
+                else if (this.cursors.right.isDown) pcDx = 1;
+                else if (this.cursors.up.isDown) pcDy = -1;
+                else if (this.cursors.down.isDown) pcDy = 1;
+
+                let intentDx = pcDx !== 0 ? pcDx : (this.mobileMoveIntent ? this.mobileMoveIntent.dx : 0);
+                let intentDy = pcDy !== 0 ? pcDy : (this.mobileMoveIntent ? this.mobileMoveIntent.dy : 0);
+
+                let nextNode = this.getBestNode(intentDx, intentDy);
+
+                if (nextNode) {
+                    this.moveToNode(nextNode);
+                    return;
+                }
+
+                if (this.mobileMoveIntent) {
+                    this.mobileMoveIntent = { dx: 0, dy: 0 };
+                }
+
                 if (this.lastDirection === 'up' && this.textures.exists('walkUp1')) {
                     this.player.stop();
                     this.player.setTexture('walkUp1');
@@ -276,8 +327,6 @@ class WorldMapScene extends Phaser.Scene {
                     this.player.stop();
                     this.player.setTexture('idle1');
                 }
-                this.currentNodeId = targetId;
-                this.registry.set('playerCurrentNode', targetId);
                 this.isMoving = false;
                 this.lastDirection = 'none';
                 return;
@@ -298,11 +347,11 @@ class WorldMapScene extends Phaser.Scene {
         if (this.isMoving) return;
         
         const stageMapping = {
-            6: 'GameScene',   // Stage 1
-            9: 'Stage2Scene', // Stage 2
-            12: 'Stage3Scene',// Stage 3
-            14: 'Stage4Scene',// Stage 4
-            22: 'Stage5Scene' // Stage 5
+            'B2': 'GameScene',   // Stage 1
+            'C1': 'Stage2Scene', // Stage 2
+            'C4': 'Stage3Scene', // Stage 3
+            'D2': 'Stage4Scene', // Stage 4
+            'F2': 'Stage5Scene'  // Stage 5
         };
         
         const targetScene = stageMapping[this.currentNodeId];
@@ -341,14 +390,14 @@ class WorldMapScene extends Phaser.Scene {
     update() {
         if (this.isMoving) return;
 
-        // 키보드 방향키 이동 로직
+        // 키보드 방향키 이동 로직 (isDown 사용)
         let dx = 0;
         let dy = 0;
         
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) dx = -1;
-        else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) dx = 1;
-        else if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) dy = -1;
-        else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) dy = 1;
+        if (this.cursors.left.isDown) dx = -1;
+        else if (this.cursors.right.isDown) dx = 1;
+        else if (this.cursors.up.isDown) dy = -1;
+        else if (this.cursors.down.isDown) dy = 1;
 
         if (dx !== 0 || dy !== 0) {
             this.handleMovementInput(dx, dy);

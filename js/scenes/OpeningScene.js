@@ -31,7 +31,7 @@ class OpeningScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // 다음으로 넘어가기 안내 텍스트
-        this.add.text(480, 500, '화면을 클릭하여 다음으로...', {
+        this.add.text(480, 500, '화면을 클릭하거나 Enter/Space 키를 눌러 다음으로...', {
             fontFamily: 'Noto Sans KR', fontSize: '16px', color: '#aaaaaa'
         }).setOrigin(0.5);
 
@@ -42,6 +42,14 @@ class OpeningScene extends Phaser.Scene {
             if (isMobile && !this.scale.isFullscreen && window.innerWidth > window.innerHeight) {
                 this.scale.startFullscreen();
             }
+            this.nextSlide();
+        });
+
+        // 엔터 또는 스페이스바 입력 시 다음 슬라이드로
+        this.input.keyboard.on('keydown-ENTER', () => {
+            this.nextSlide();
+        });
+        this.input.keyboard.on('keydown-SPACE', () => {
             this.nextSlide();
         });
     }

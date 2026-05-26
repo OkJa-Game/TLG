@@ -27,7 +27,7 @@ class Stage4Scene extends Phaser.Scene {
         this.missiles = this.physics.add.group();
 
         // 지그재그 플랫폼 생성 (아래에서 위로 올라가는 계단식)
-        let yPos = 2815; // 최하단(2980)에서 165만큼 위에서 시작
+        let yPos = 2780; // 최하단(2980)에서 200만큼 위에서 시작
         let isLeft = true;
         let floorCount = 0;
 
@@ -39,13 +39,15 @@ class Stage4Scene extends Phaser.Scene {
                 this.platforms.create(x+20, yPos, 'ground_tex');
             }
             
-            // 중간중간 점프를 돕는 작은 발판 생성 (간격의 중간)
-            if (yPos - 165 > 300) {
-                this.platforms.create(480, yPos - 82, 'ground_tex');
+            // 중간중간 점프를 돕는 작은 발판 생성
+            // 천장이 막혀 점프할 수 없는 겹치는 구역(400~560)을 피해서 완전한 바깥쪽으로 배치
+            if (yPos - 200 > 300) {
+                const platformX = isLeft ? 200 : 760; // 첫 번째 장애물은 x=200, 그 위의 장애물은 대칭되게 우측으로(x=760)
+                this.platforms.create(platformX, yPos - 100, 'ground_tex');
             }
 
             // 아이템, 적, 퀴즈 박스 동적 배치
-            const itemX = isLeft ? 300 : 700;
+            const itemX = isLeft ? 150 : 810; // 점프 도착지점(중앙 부근)에서 멀리 이동
             if (floorCount === 2) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part1'));
             if (floorCount === 5) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part2'));
             if (floorCount === 8) this.items.add(new Item(this, itemX, yPos - 50, 'item_tex', 'part3'));
@@ -56,26 +58,26 @@ class Stage4Scene extends Phaser.Scene {
             }
 
             if (floorCount === 7) {
-                const box = this.physics.add.staticSprite(isLeft ? 250 : 650, yPos - 40, 'box_tex');
+                const box = this.physics.add.staticSprite(itemX, yPos - 40, 'box_tex');
                 this.interactables.add(box);
                 box.quizId = 'box_riddle';
             }
 
-            yPos -= 165; // 기존 250px에서 2/3 수준인 165px로 층 높이 감소
+            yPos -= 200; // 기존 165에서 200으로 층 높이 증가
             isLeft = !isLeft;
             floorCount++;
         }
         
-        // 문 앞 발판
+        // 문 앞 발판 (너무 높지 않게 기존 150에서 200으로 낮춤)
         for(let i=360; i<600; i+=40) {
-            this.platforms.create(i+20, 150, 'ground_tex');
+            this.platforms.create(i+20, 200, 'ground_tex');
         }
 
         // 맨 위 목적지 (문)
         const door = this.physics.add.staticSprite(480, 50, 'door_tex');
         this.interactables.add(door);
         door.setOrigin(0.5, 1);
-        door.setY(150);
+        door.setY(200); // 발판 높이에 맞게 200으로 수정
         door.refreshBody();
         door.isDoor = true;
 

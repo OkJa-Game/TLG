@@ -51,6 +51,9 @@ class BootScene extends Phaser.Scene {
             if (window.loadedImages['CH-OK-Crawl-2.png']) this.textures.addImage('crawl2', window.loadedImages['CH-OK-Crawl-2.png']);
             if (window.loadedImages['CH-OK-Crawl-3.png']) this.textures.addImage('crawl3', window.loadedImages['CH-OK-Crawl-3.png']);
             if (window.loadedImages['CH-OK-Crawl-4.png']) this.textures.addImage('crawl4', window.loadedImages['CH-OK-Crawl-4.png']);
+            // Mop (적) 애니메이션 에셋 추가
+            if (window.loadedImages['CH-Mop-A-1.png']) this.textures.addImage('mop_a_1', window.loadedImages['CH-Mop-A-1.png']);
+            if (window.loadedImages['CH-Mop-A-2.png']) this.textures.addImage('mop_a_2', window.loadedImages['CH-Mop-A-2.png']);
         }
         
         // 현재는 에셋이 없으므로 Phaser의 Graphics를 이용해 임시 텍스처를 생성합니다.
@@ -245,6 +248,18 @@ class BootScene extends Phaser.Scene {
                     { key: 'crawl3' }
                 ],
                 frameRate: 8,
+                repeat: -1
+            });
+        }
+        
+        if (this.textures.exists('mop_a_1')) {
+            this.anims.create({
+                key: 'mop_idle',
+                frames: [
+                    { key: 'mop_a_1' },
+                    { key: 'mop_a_2' }
+                ],
+                frameRate: 2, // 1초에 2프레임 = 0.5초 간격
                 repeat: -1
             });
         }
