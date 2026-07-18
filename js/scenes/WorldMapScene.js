@@ -113,7 +113,7 @@ class WorldMapScene extends Phaser.Scene {
 
         // 모바일 입력 설정
         this.lastTapTime = 0;
-        this.mobileMoveIntent = { dx: 0, dy: 0 };
+        this.targetNodeId = null;
 
         this.input.on('pointerdown', (pointer) => {
             const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
@@ -124,25 +124,30 @@ class WorldMapScene extends Phaser.Scene {
             // 더블탭 감지 로직 (300ms 이내 터치 시)
             const currentTime = this.time.now;
             if (currentTime - this.lastTapTime < 300) {
+                this.targetNodeId = null;
                 this.enterCurrentStage();
                 return;
             }
             this.lastTapTime = currentTime;
             
-            // 모바일 터치 이동 및 정지 처리
-            if (this.mobileMoveIntent && (this.mobileMoveIntent.dx !== 0 || this.mobileMoveIntent.dy !== 0)) {
-                // 이미 이동 중이거나 이동 의도가 있으면 멈춤
-                this.mobileMoveIntent = { dx: 0, dy: 0 };
-            } else {
-                // 멈춰있거나 이동 의도가 없으면 터치한 방향으로 이동 의도 설정
-                const dx = pointer.x - this.player.x;
-                const dy = pointer.y - this.player.y;
+            // 가장 가까운 노드 찾기
+            let closestNode = null;
+            let minDist = Infinity;
+            this.nodes.forEach(node => {
+                const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, node.x, node.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestNode = node;
+                }
+            });
+
+            if (closestNode) {
+                this.targetNodeId = closestNode.id;
                 
-                if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
-                    this.mobileMoveIntent = { dx, dy };
-                    
-                    if (!this.isMoving) {
-                        this.handleMovementInput(this.mobileMoveIntent.dx, this.mobileMoveIntent.dy);
+                if (!this.isMoving && this.currentNodeId !== this.targetNodeId) {
+                    const nextNode = this.getNextNodeTowards(this.currentNodeId, this.targetNodeId);
+                    if (nextNode) {
+                        this.moveToNode(nextNode);
                     }
                 }
             }
@@ -156,6 +161,25 @@ class WorldMapScene extends Phaser.Scene {
         this.add.text(20, 500, `획득한 부품: ${parts.join(', ') || '없음'}`, {
             fontFamily: 'Noto Sans KR', fontSize: '18px', color: '#ffffff'
         });
+    }
+
+    getNextNodeTowards(currentId, targetId) {
+        const COLS = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const ROWS = ['1', '2', '3', '4'];
+        
+        const curC = COLS.indexOf(currentId[0]);
+        const curR = ROWS.indexOf(currentId[1]);
+        
+        const tarC = COLS.indexOf(targetId[0]);
+        const tarR = ROWS.indexOf(targetId[1]);
+        
+        if (curC < tarC) return COLS[curC + 1] + ROWS[curR];
+        if (curC > tarC) return COLS[curC - 1] + ROWS[curR];
+        
+        if (curR < tarR) return COLS[curC] + ROWS[curR + 1];
+        if (curR > tarR) return COLS[curC] + ROWS[curR - 1];
+        
+        return null;
     }
 
     getWaypoints(start, end) {
@@ -209,11 +233,8 @@ class WorldMapScene extends Phaser.Scene {
         
         const bestNode = this.getBestNode(dx, dy);
         if (bestNode !== null) {
+            this.targetNodeId = null; // 키보드 이동시 모바일 타겟 취소
             this.moveToNode(bestNode);
-        } else {
-            if (this.mobileMoveIntent) {
-                this.mobileMoveIntent = { dx: 0, dy: 0 };
-            }
         }
     }
 
@@ -286,7 +307,7 @@ class WorldMapScene extends Phaser.Scene {
             this.registry.set('playerCurrentNode', targetId);
             this.isMoving = false;
             this.lastDirection = 'none';
-            if (this.mobileMoveIntent) this.mobileMoveIntent = { dx: 0, dy: 0 };
+            this.targetNodeId = null;
             return;
         }
         
@@ -303,18 +324,22 @@ class WorldMapScene extends Phaser.Scene {
                 else if (this.cursors.up.isDown) pcDy = -1;
                 else if (this.cursors.down.isDown) pcDy = 1;
 
-                let intentDx = pcDx !== 0 ? pcDx : (this.mobileMoveIntent ? this.mobileMoveIntent.dx : 0);
-                let intentDy = pcDy !== 0 ? pcDy : (this.mobileMoveIntent ? this.mobileMoveIntent.dy : 0);
-
-                let nextNode = this.getBestNode(intentDx, intentDy);
+                let nextNode = null;
+                
+                if (pcDx !== 0 || pcDy !== 0) {
+                    this.targetNodeId = null;
+                    nextNode = this.getBestNode(pcDx, pcDy);
+                } else if (this.targetNodeId && this.currentNodeId !== this.targetNodeId) {
+                    nextNode = this.getNextNodeTowards(this.currentNodeId, this.targetNodeId);
+                }
 
                 if (nextNode) {
                     this.moveToNode(nextNode);
                     return;
                 }
 
-                if (this.mobileMoveIntent) {
-                    this.mobileMoveIntent = { dx: 0, dy: 0 };
+                if (this.targetNodeId === this.currentNodeId) {
+                    this.targetNodeId = null;
                 }
 
                 if (this.lastDirection === 'up' && this.textures.exists('walkUp1')) {
