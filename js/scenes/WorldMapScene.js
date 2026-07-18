@@ -81,22 +81,43 @@ class WorldMapScene extends Phaser.Scene {
         });
         */
 
-        // 스테이지 노드에 빛(작은 원) 추가
+        // 스테이지 노드에 안개 같은 부드러운 빛(glow) 텍스처 동적 생성
+        if (!this.textures.exists('soft_glow')) {
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const grd = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            grd.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            grd.addColorStop(0.3, 'rgba(255, 255, 255, 0.3)');
+            grd.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, size, size);
+            this.textures.addCanvas('soft_glow', canvas);
+        }
+
         const stageNodes = ['B2', 'C1', 'C4', 'D2', 'F2'];
         let visited = this.registry.get('visitedStages') || [];
         
         this.nodes.forEach((node) => {
             if (stageNodes.includes(node.id)) {
-                let color = visited.includes(node.id) ? 0xffffff : 0xff0000;
-                // 스테이지 위치를 알 수 있도록 작은 빛 추가
-                let light = this.add.circle(node.x, node.y - 15, 6, color);
-                light.setDepth(10);
+                let isVisited = visited.includes(node.id);
                 
-                // 빛 깜빡임 효과
+                // 스테이지 위치를 알 수 있도록 안개 같은 빛 추가
+                let light = this.add.sprite(node.x, node.y - 15, 'soft_glow');
+                if (!isVisited) {
+                    light.setTint(0xff4444); // 안 가본 곳은 붉은 빛
+                }
+                light.setDepth(10);
+                light.setBlendMode(Phaser.BlendModes.ADD); // 자연스러운 발광 효과
+                
+                // 빛 깜빡임 효과 (안개처럼 은은하게)
                 this.tweens.add({
                     targets: light,
-                    alpha: 0.3,
-                    duration: 800,
+                    alpha: { from: 0.9, to: 0.4 },
+                    scale: { from: 1.2, to: 0.8 },
+                    duration: 1500 + Math.random() * 500, // 약간 불규칙하게
                     yoyo: true,
                     repeat: -1,
                     ease: 'Sine.easeInOut'
