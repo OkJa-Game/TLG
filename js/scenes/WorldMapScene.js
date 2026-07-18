@@ -81,6 +81,29 @@ class WorldMapScene extends Phaser.Scene {
         });
         */
 
+        // 스테이지 노드에 빛(작은 원) 추가
+        const stageNodes = ['B2', 'C1', 'C4', 'D2', 'F2'];
+        let visited = this.registry.get('visitedStages') || [];
+        
+        this.nodes.forEach((node) => {
+            if (stageNodes.includes(node.id)) {
+                let color = visited.includes(node.id) ? 0xffffff : 0xff0000;
+                // 스테이지 위치를 알 수 있도록 작은 빛 추가
+                let light = this.add.circle(node.x, node.y - 15, 6, color);
+                light.setDepth(10);
+                
+                // 빛 깜빡임 효과
+                this.tweens.add({
+                    targets: light,
+                    alpha: 0.3,
+                    duration: 800,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+            }
+        });
+
         // B2 노드에 Mop 애니메이션 추가
         const b2Node = this.nodes.find(n => n.id === 'B2');
         if (b2Node && this.textures.exists('mop_a_1')) {
@@ -381,6 +404,13 @@ class WorldMapScene extends Phaser.Scene {
         
         const targetScene = stageMapping[this.currentNodeId];
         if (!targetScene) return; // 스테이지가 아닌 노드에서는 무시
+
+        // 방문한 스테이지 기록 (월드맵의 빛 색상을 위해)
+        let visited = this.registry.get('visitedStages') || [];
+        if (!visited.includes(this.currentNodeId)) {
+            visited.push(this.currentNodeId);
+            this.registry.set('visitedStages', visited);
+        }
 
         this.isMoving = true;
         
